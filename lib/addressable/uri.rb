@@ -2437,19 +2437,27 @@ module Addressable
           raise InvalidURIError, "Hostname not supplied: '#{self.to_s}'"
         end
       end
-      if self.path != nil && !self.path.empty? && self.path[0..0] != SLASH &&
-          self.authority != nil
-        raise InvalidURIError,
-          "Cannot have a relative path with an authority set: '#{self.to_s}'"
+
+      if !!self.path
+        raise InvalidURIError, "Path contains unencoded spaces" if self.path[/[[:space:]]/]
+
+        if !self.path.empty?
+          if self.path[0..0] != SLASH && !!self.authority
+          raise InvalidURIError,
+                "Cannot have a relative path with an authority set: '#{self.to_s}'"
+          end
+
+          if self.path[0..1] == SLASH + SLASH && !self.authority
+            raise InvalidURIError,
+                  "Cannot have a path with two leading slashes " +
+                      "without an authority set: '#{self.to_s}'"
+          end
+        end
       end
-      if self.path != nil && !self.path.empty? &&
-          self.path[0..1] == SLASH + SLASH && self.authority == nil
-        raise InvalidURIError,
-          "Cannot have a path with two leading slashes " +
-          "without an authority set: '#{self.to_s}'"
-      end
+
       unreserved = CharacterClasses::UNRESERVED
       sub_delims = CharacterClasses::SUB_DELIMS
+
       if !self.host.nil? && (self.host =~ /[<>{}\/\\\?\#\@"[[:space:]]]/ ||
           (self.host[/^\[(.*)\]$/, 1] != nil && self.host[/^\[(.*)\]$/, 1] !~
           Regexp.new("^[#{unreserved}#{sub_delims}:]*$")))

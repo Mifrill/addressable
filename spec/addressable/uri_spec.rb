@@ -2062,6 +2062,12 @@ describe Addressable::URI, "when parsing IPv6 addresses" do
       Addressable::URI.parse("http://[<invalid>]/")
     end).to raise_error(Addressable::URI::InvalidURIError)
   end
+
+  it "should raise an error for 'https://example.com/v3/ '" do
+    expect(lambda do
+      Addressable::URI.parse("https://example.com/v3/ ")
+    end).to raise_error(Addressable::URI::InvalidURIError)
+  end
 end
 
 describe Addressable::URI, "when parsing IPv6 address" do
