@@ -57,6 +57,14 @@ module Addressable
     SLASH = '/'
     EMPTY_STR = ''
 
+    SELF_REF = '.'
+    PARENT = '..'
+
+    RULE_2A = /\/\.\/|\/\.$/
+    RULE_2B_2C = /\/([^\/]*)\/\.\.\/|\/([^\/]*)\/\.\.$/
+    RULE_2D = /^\.\.?\/?/
+    RULE_PREFIXED_PARENT = /^\/\.\.?\/|^(\/\.\.?)+\/?$/
+
     URIREGEX = /^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?$/
 
     PORT_MAPPING = {
@@ -769,6 +777,55 @@ module Addressable
     end
 
     ##
+    # Resolves paths to their simplest form.
+    #
+    # @param [String] path The path to normalize.
+    #
+    # @return [String] The normalized path.
+    def self.normalize_path(path)
+      # Section 5.2.4 of RFC 3986
+
+      return nil if path.nil?
+      normalized_path = path.dup
+      begin
+        mod = nil
+        mod ||= normalized_path.gsub!(RULE_2A, SLASH)
+
+        pair = normalized_path.match(RULE_2B_2C)
+        parent, current = pair[1], pair[2] if pair
+        if pair && ((parent != SELF_REF && parent != PARENT) ||
+            (current != SELF_REF && current != PARENT))
+          mod ||= normalized_path.gsub!(
+              Regexp.new(
+                  "/#{Regexp.escape(parent.to_s)}/\\.\\./|" +
+                      "(/#{Regexp.escape(current.to_s)}/\\.\\.$)"
+              ), SLASH
+          )
+        end
+
+        mod ||= normalized_path.gsub!(RULE_2D, EMPTY_STR)
+        # Non-standard, removes prefixed dotted segments from path.
+        mod ||= normalized_path.gsub!(RULE_PREFIXED_PARENT, SLASH)
+      end until mod.nil?
+
+      return normalized_path
+    end
+
+    # Returns an array of known ip-based schemes. These schemes typically
+    # use a similar URI form:
+    # <code>//<user>:<password>@<host>:<port>/<url-path></code>
+    def self.ip_based_schemes
+      return self.port_mapping.keys
+    end
+
+    # Returns a hash of common IP-based schemes and their default port
+    # numbers. Adding new schemes to this hash, as necessary, will allow
+    # for better URI normalization.
+    def self.port_mapping
+      PORT_MAPPING
+    end
+
+    ##
     # Creates a new uri object from component parts.
     #
     # @option [String, #to_str] scheme The scheme component.
@@ -1332,20 +1389,6 @@ module Addressable
 
       # Ensure we haven't created an invalid URI
       validate()
-    end
-
-    # Returns an array of known ip-based schemes. These schemes typically
-    # use a similar URI form:
-    # <code>//<user>:<password>@<host>:<port>/<url-path></code>
-    def self.ip_based_schemes
-      return self.port_mapping.keys
-    end
-
-    # Returns a hash of common IP-based schemes and their default port
-    # numbers. Adding new schemes to this hash, as necessary, will allow
-    # for better URI normalization.
-    def self.port_mapping
-      PORT_MAPPING
     end
 
     ##
@@ -2376,49 +2419,7 @@ module Addressable
       return nil
     end
 
-  protected
-    SELF_REF = '.'
-    PARENT = '..'
-
-    RULE_2A = /\/\.\/|\/\.$/
-    RULE_2B_2C = /\/([^\/]*)\/\.\.\/|\/([^\/]*)\/\.\.$/
-    RULE_2D = /^\.\.?\/?/
-    RULE_PREFIXED_PARENT = /^\/\.\.?\/|^(\/\.\.?)+\/?$/
-
-    ##
-    # Resolves paths to their simplest form.
-    #
-    # @param [String] path The path to normalize.
-    #
-    # @return [String] The normalized path.
-    def self.normalize_path(path)
-      # Section 5.2.4 of RFC 3986
-
-      return nil if path.nil?
-      normalized_path = path.dup
-      begin
-        mod = nil
-        mod ||= normalized_path.gsub!(RULE_2A, SLASH)
-
-        pair = normalized_path.match(RULE_2B_2C)
-        parent, current = pair[1], pair[2] if pair
-        if pair && ((parent != SELF_REF && parent != PARENT) ||
-            (current != SELF_REF && current != PARENT))
-          mod ||= normalized_path.gsub!(
-            Regexp.new(
-              "/#{Regexp.escape(parent.to_s)}/\\.\\./|" +
-              "(/#{Regexp.escape(current.to_s)}/\\.\\.$)"
-            ), SLASH
-          )
-        end
-
-        mod ||= normalized_path.gsub!(RULE_2D, EMPTY_STR)
-        # Non-standard, removes prefixed dotted segments from path.
-        mod ||= normalized_path.gsub!(RULE_PREFIXED_PARENT, SLASH)
-      end until mod.nil?
-
-      return normalized_path
-    end
+    protected
 
     ##
     # Ensures that the URI is valid.
