@@ -20,6 +20,7 @@
 
 require "addressable/version"
 require "addressable/idna"
+require "addressable/validator"
 require "public_suffix"
 
 ##
@@ -34,6 +35,8 @@ module Addressable
     # Raised if something other than a uri is supplied.
     class InvalidURIError < StandardError
     end
+
+    prepend Validator
 
     ##
     # Container for the character classes specified in
@@ -888,9 +891,6 @@ module Addressable
       # Reset dependent values
       remove_instance_variable(:@normalized_scheme) if defined?(@normalized_scheme)
       remove_composite_values
-
-      # Ensure we haven't created an invalid URI
-      validate()
     end
 
     ##
@@ -945,9 +945,6 @@ module Addressable
       remove_instance_variable(:@authority) if defined?(@authority)
       remove_instance_variable(:@normalized_user) if defined?(@normalized_user)
       remove_composite_values
-
-      # Ensure we haven't created an invalid URI
-      validate()
     end
 
     ##
@@ -1006,9 +1003,6 @@ module Addressable
       remove_instance_variable(:@authority) if defined?(@authority)
       remove_instance_variable(:@normalized_password) if defined?(@normalized_password)
       remove_composite_values
-
-      # Ensure we haven't created an invalid URI
-      validate()
     end
 
     ##
@@ -1077,9 +1071,6 @@ module Addressable
       # Reset dependent values
       remove_instance_variable(:@authority) if defined?(@authority)
       remove_composite_values
-
-      # Ensure we haven't created an invalid URI
-      validate()
     end
 
     ##
@@ -1132,9 +1123,6 @@ module Addressable
       remove_instance_variable(:@authority) if defined?(@authority)
       remove_instance_variable(:@normalized_host) if defined?(@normalized_host)
       remove_composite_values
-
-      # Ensure we haven't created an invalid URI
-      validate()
     end
 
     ##
@@ -1272,9 +1260,6 @@ module Addressable
       remove_instance_variable(:@userinfo) if defined?(@userinfo)
       remove_instance_variable(:@normalized_userinfo) if defined?(@normalized_userinfo)
       remove_composite_values
-
-      # Ensure we haven't created an invalid URI
-      validate()
     end
 
     ##
@@ -1329,9 +1314,6 @@ module Addressable
       remove_instance_variable(:@authority) if defined?(@authority)
       remove_instance_variable(:@normalized_authority) if defined?(@normalized_authority)
       remove_composite_values
-
-      # Ensure we haven't created an invalid URI
-      validate()
     end
 
     # Returns an array of known ip-based schemes. These schemes typically
@@ -1399,9 +1381,6 @@ module Addressable
       remove_instance_variable(:@authority) if defined?(@authority)
       remove_instance_variable(:@normalized_port) if defined?(@normalized_port)
       remove_composite_values
-
-      # Ensure we haven't created an invalid URI
-      validate()
     end
 
     ##
@@ -1551,9 +1530,6 @@ module Addressable
       # Reset dependent values
       remove_instance_variable(:@normalized_path) if defined?(@normalized_path)
       remove_composite_values
-
-      # Ensure we haven't created an invalid URI
-      validate()
     end
 
     ##
@@ -1815,9 +1791,6 @@ module Addressable
       # Reset dependent values
       remove_instance_variable(:@normalized_fragment) if defined?(@normalized_fragment)
       remove_composite_values
-
-      # Ensure we haven't created an invalid URI
-      validate()
     end
 
     ##
@@ -2418,44 +2391,6 @@ module Addressable
       end until mod.nil?
 
       return normalized_path
-    end
-
-    ##
-    # Ensures that the URI is valid.
-    def validate
-      return if !!@validation_deferred
-      if self.scheme != nil && self.ip_based? &&
-          (self.host == nil || self.host.empty?) &&
-          (self.path == nil || self.path.empty?)
-        raise InvalidURIError,
-          "Absolute URI missing hierarchical segment: '#{self.to_s}'"
-      end
-      if self.host == nil
-        if self.port != nil ||
-            self.user != nil ||
-            self.password != nil
-          raise InvalidURIError, "Hostname not supplied: '#{self.to_s}'"
-        end
-      end
-      if self.path != nil && !self.path.empty? && self.path[0..0] != SLASH &&
-          self.authority != nil
-        raise InvalidURIError,
-          "Cannot have a relative path with an authority set: '#{self.to_s}'"
-      end
-      if self.path != nil && !self.path.empty? &&
-          self.path[0..1] == SLASH + SLASH && self.authority == nil
-        raise InvalidURIError,
-          "Cannot have a path with two leading slashes " +
-          "without an authority set: '#{self.to_s}'"
-      end
-      unreserved = CharacterClasses::UNRESERVED
-      sub_delims = CharacterClasses::SUB_DELIMS
-      if !self.host.nil? && (self.host =~ /[<>{}\/\\\?\#\@"[[:space:]]]/ ||
-          (self.host[/^\[(.*)\]$/, 1] != nil && self.host[/^\[(.*)\]$/, 1] !~
-          Regexp.new("^[#{unreserved}#{sub_delims}:]*$")))
-        raise InvalidURIError, "Invalid character in host: '#{self.host.to_s}'"
-      end
-      return nil
     end
 
     ##
