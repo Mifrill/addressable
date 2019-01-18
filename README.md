@@ -9,21 +9,21 @@
 
 [![Gem Version](http://img.shields.io/gem/dt/addressable.svg)][gem]
 [![Build Status](https://secure.travis-ci.org/sporkmonger/addressable.svg?branch=master)][travis]
-[![Dependency Status](https://gemnasium.com/sporkmonger/addressable.svg?travis)][gemnasium]
 [![Test Coverage Status](https://img.shields.io/coveralls/sporkmonger/addressable.svg)][coveralls]
 [![Documentation Coverage Status](http://inch-ci.org/github/sporkmonger/addressable.svg?branch=master)][inch]
 
 [gem]: https://rubygems.org/gems/addressable
 [travis]: http://travis-ci.org/sporkmonger/addressable
-[gemnasium]: https://gemnasium.com/sporkmonger/addressable
 [coveralls]: https://coveralls.io/r/sporkmonger/addressable
 [inch]: http://inch-ci.org/github/sporkmonger/addressable
 
 # Description
 
-Addressable is a replacement for the URI implementation that is part of
-Ruby's standard library. It more closely conforms to RFC 3986, RFC 3987, and
-RFC 6570 (level 4), providing support for IRIs and URI templates.
+Addressable is an alternative implementation to the URI implementation
+that is part of Ruby's standard library. It is flexible, offers heuristic
+parsing, and additionally provides extensive support for IRIs and URI templates.
+
+Addressable closely conforms to RFC 3986, RFC 3987, and RFC 6570 (level 4).
 
 # Reference
 
