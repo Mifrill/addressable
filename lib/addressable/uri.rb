@@ -784,18 +784,20 @@ module Addressable
     # @return [String] The normalized path.
     def self.normalize_path(path)
       # Section 5.2.4 of RFC 3986
-      return nil if path.nil?
+      return if path.nil?
 
       normalized_path = path.dup
-      begin
-        mod = nil
-        mod ||= normalized_path.gsub!(RULE_2A, SLASH)
 
+      loop do
+        mod ||= normalized_path.gsub!(RULE_2A, SLASH)
         pair = normalized_path.match(RULE_2B_2C)
 
         if pair
           parent  = pair[1]
           current = pair[2]
+        else
+          parent  = nil
+          current = nil
         end
 
         regexp = "/#{Regexp.escape(parent.to_s)}/\\.\\./|"
@@ -809,7 +811,9 @@ module Addressable
         mod ||= normalized_path.gsub!(RULE_2D, EMPTY_STR)
         # Non-standard, removes prefixed dotted segments from path.
         mod ||= normalized_path.gsub!(RULE_PREFIXED_PARENT, SLASH)
-      end until mod.nil?
+
+        break if mod.nil?
+      end
 
       normalized_path
     end
