@@ -57,13 +57,13 @@ module Addressable
     SLASH = '/'
     EMPTY_STR = ''
 
-    SELF_REF = '.'
-    PARENT = '..'
+    SELF_REF = "."
+    PARENT   = ".."
 
-    RULE_2A = /\/\.\/|\/\.$/
-    RULE_2B_2C = /\/([^\/]*)\/\.\.\/|\/([^\/]*)\/\.\.$/
-    RULE_2D = /^\.\.?\/?/
-    RULE_PREFIXED_PARENT = /^\/\.\.?\/|^(\/\.\.?)+\/?$/
+    RULE_2A              = %r{\/\.\/|\/\.$}
+    RULE_2B_2C           = %r{\/([^\/]*)\/\.\.\/|\/([^\/]*)\/\.\.$}
+    RULE_2D              = %r{^\.\.?\/?}
+    RULE_PREFIXED_PARENT = %r{^\/\.\.?\/|^(\/\.\.?)+\/?$}
 
     URIREGEX = /^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?$/
 
@@ -784,23 +784,26 @@ module Addressable
     # @return [String] The normalized path.
     def self.normalize_path(path)
       # Section 5.2.4 of RFC 3986
-
       return nil if path.nil?
+
       normalized_path = path.dup
       begin
         mod = nil
         mod ||= normalized_path.gsub!(RULE_2A, SLASH)
 
         pair = normalized_path.match(RULE_2B_2C)
-        parent, current = pair[1], pair[2] if pair
+
+        if pair
+          parent  = pair[1]
+          current = pair[2]
+        end
+
+        regexp = "/#{Regexp.escape(parent.to_s)}/\\.\\./|"
+        regexp += "(/#{Regexp.escape(current.to_s)}/\\.\\.$)"
+
         if pair && ((parent != SELF_REF && parent != PARENT) ||
-            (current != SELF_REF && current != PARENT))
-          mod ||= normalized_path.gsub!(
-              Regexp.new(
-                  "/#{Regexp.escape(parent.to_s)}/\\.\\./|" +
-                      "(/#{Regexp.escape(current.to_s)}/\\.\\.$)"
-              ), SLASH
-          )
+          (current != SELF_REF && current != PARENT))
+          mod ||= normalized_path.gsub!(Regexp.new(regexp), SLASH)
         end
 
         mod ||= normalized_path.gsub!(RULE_2D, EMPTY_STR)
@@ -808,14 +811,14 @@ module Addressable
         mod ||= normalized_path.gsub!(RULE_PREFIXED_PARENT, SLASH)
       end until mod.nil?
 
-      return normalized_path
+      normalized_path
     end
 
     # Returns an array of known ip-based schemes. These schemes typically
     # use a similar URI form:
     # <code>//<user>:<password>@<host>:<port>/<url-path></code>
     def self.ip_based_schemes
-      return self.port_mapping.keys
+      port_mapping.keys
     end
 
     # Returns a hash of common IP-based schemes and their default port
