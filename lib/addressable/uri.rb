@@ -55,6 +55,8 @@ module Addressable
       FRAGMENT = PCHAR + "\\/\\?"
     end
 
+    prepend Validator
+
     SLASH = '/'
     DOUBLE_SLASH = SLASH * 2
     EMPTY_STR = ''
@@ -2464,7 +2466,5 @@ module Addressable
       remove_instance_variable(:@uri_string) if defined?(@uri_string)
       remove_instance_variable(:@hash) if defined?(@hash)
     end
-
-    prepend Validator
   end
 end
