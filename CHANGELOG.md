@@ -1,3 +1,15 @@
+# Addressable 2.8.0
+- fixes ReDoS vulnerability in Addressable::Template#match
+- no longer replaces `+` with spaces in queries for non-http(s) schemes
+- fixed encoding ipv6 literals
+- the `:compacted` flag for `normalized_query` now dedupes parameters
+- fix broken `escape_component` alias
+- dropping support for Ruby 2.0 and 2.1
+- adding Ruby 3.0 compatibility for development tasks
+- drop support for `rack-mount` and remove Addressable::Template#generate
+- performance improvements
+- switch CI/CD to GitHub Actions
+
 # Addressable 2.7.0
 - added `:compacted` flag to `normalized_query`
 - `heuristic_parse` handles `mailto:` more intuitively
